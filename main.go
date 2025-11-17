@@ -866,7 +866,6 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 	filename := fmt.Sprintf("%s.m4a", forbiddenNames.ReplaceAllString(songName, "_"))
 	track.SaveName = filename
 	trackPath := filepath.Join(track.SaveDir, track.SaveName)
-	lrcFilename := fmt.Sprintf("%s.%s", forbiddenNames.ReplaceAllString(songName, "_"), Config.LrcFormat)
 
 	// Determine possible post-conversion target file (so we can skip re-download)
 	var convertedPath string
@@ -881,18 +880,38 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 	//get lrc
 	var lrc string = ""
 	if Config.EmbedLrc || Config.SaveLrcFile {
-		lrcStr, err := lyrics.Get(track.Storefront, track.ID, Config.LrcType, Config.Language, Config.LrcFormat, token, mediaUserToken)
+		ttmlStr, err := lyrics.Get(track.Storefront, track.ID, Config.LrcType, Config.Language, "ttml", token, mediaUserToken)
 		if err != nil {
 			fmt.Println(err)
 		} else {
 			if Config.SaveLrcFile {
-				err := writeLyrics(track.SaveDir, lrcFilename, lrcStr)
+				// Save TTML
+				ttmlFilename := fmt.Sprintf("%s.ttml", forbiddenNames.ReplaceAllString(songName, "_"))
+				err := writeLyrics(track.SaveDir, ttmlFilename, ttmlStr)
 				if err != nil {
-					fmt.Printf("Failed to write lyrics")
+					fmt.Printf("Failed to write TTML lyrics")
+				}
+				// Convert and save LRC
+				lrcStr, err := lyrics.TtmlToLrc(ttmlStr)
+				if err != nil {
+					fmt.Println("Failed to convert TTML to LRC:", err)
+				} else {
+					lrcFilename := fmt.Sprintf("%s.lrc", forbiddenNames.ReplaceAllString(songName, "_"))
+					err := writeLyrics(track.SaveDir, lrcFilename, lrcStr)
+					if err != nil {
+						fmt.Printf("Failed to write LRC lyrics")
+					}
 				}
 			}
 			if Config.EmbedLrc {
-				lrc = lrcStr
+				if Config.LrcFormat == "ttml" {
+					lrc = ttmlStr
+				} else {
+					lrc, err = lyrics.TtmlToLrc(ttmlStr)
+					if err != nil {
+						fmt.Println("Failed to convert TTML to LRC for embedding:", err)
+					}
+				}
 			}
 		}
 	}
