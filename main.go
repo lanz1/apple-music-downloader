@@ -880,7 +880,7 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 	//get lrc
 	var lrc string = ""
 	if Config.EmbedLrc || Config.SaveLrcFile {
-		ttmlStr, err := lyrics.Get(track.Storefront, track.ID, Config.LrcType, Config.Language, "ttml", token, mediaUserToken)
+		ttmlStr, err := lyrics.Get(track.Storefront, track.ID, "syllable-lyrics", Config.Language, "ttml", token, mediaUserToken)
 		if err != nil {
 			fmt.Println(err)
 		} else {
@@ -891,10 +891,10 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 				if err != nil {
 					fmt.Printf("Failed to write TTML lyrics")
 				}
-				// Convert and save LRC
-				lrcStr, err := lyrics.TtmlToLrc(ttmlStr)
+				// Convert and save LRC (non-sillabato)
+				lrcStr, err := lyrics.Get(track.Storefront, track.ID, "lyrics", Config.Language, "lrc", token, mediaUserToken)
 				if err != nil {
-					fmt.Println("Failed to convert TTML to LRC:", err)
+					fmt.Println("Failed to get non-syllable LRC:", err)
 				} else {
 					lrcFilename := fmt.Sprintf("%s.lrc", forbiddenNames.ReplaceAllString(songName, "_"))
 					err := writeLyrics(track.SaveDir, lrcFilename, lrcStr)
@@ -907,7 +907,7 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 				if Config.LrcFormat == "ttml" {
 					lrc = ttmlStr
 				} else {
-					lrc, err = lyrics.TtmlToLrc(ttmlStr)
+					lrc, err = lyrics.Get(track.Storefront, track.ID, "lyrics", Config.Language, "lrc", token, mediaUserToken)
 					if err != nil {
 						fmt.Println("Failed to convert TTML to LRC for embedding:", err)
 					}
