@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"main/utils/ampapi"
+	"main/utils/hyper"
 	"main/utils/lyrics"
 	"main/utils/runv2"
 	"main/utils/runv3"
@@ -984,6 +985,11 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 		return
 	}
 
+	// Save info.json
+	if err := hyper.SaveTrackInfoJSON(track); err != nil {
+		fmt.Println("Failed to save info.json:", err)
+	}
+
 	// CONVERSION FEATURE hook
 	convertIfNeeded(track)
 
@@ -991,8 +997,8 @@ func ripTrack(track *task.Track, token string, mediaUserToken string) {
 	okDict[track.PreID] = append(okDict[track.PreID], track.TaskNum)
 }
 
-func ripStation(albumId string, token string, storefront string, mediaUserToken string) error {
-	station := task.NewStation(storefront, albumId)
+func ripStation(albumId string, token string, storefront string, mediaUserToken string, urlRaw string) error {
+	station := task.NewStation(storefront, albumId, urlRaw)
 	err := station.GetResp(mediaUserToken, token, Config.Language)
 	if err != nil {
 		return err
@@ -1175,8 +1181,8 @@ func ripStation(albumId string, token string, storefront string, mediaUserToken 
 	return nil
 }
 
-func ripAlbum(albumId string, token string, storefront string, mediaUserToken string, urlArg_i string) error {
-	album := task.NewAlbum(storefront, albumId)
+func ripAlbum(albumId string, token string, storefront string, mediaUserToken string, urlArg_i string, urlRaw string) error {
+	album := task.NewAlbum(storefront, albumId, urlRaw)
 	err := album.GetResp(token, Config.Language)
 	if err != nil {
 		fmt.Println("Failed to get album response.")
@@ -1448,8 +1454,8 @@ func ripAlbum(albumId string, token string, storefront string, mediaUserToken st
 	return nil
 
 }
-func ripPlaylist(playlistId string, token string, storefront string, mediaUserToken string) error {
-	playlist := task.NewPlaylist(storefront, playlistId)
+func ripPlaylist(playlistId string, token string, storefront string, mediaUserToken string, urlRaw string) error {
+	playlist := task.NewPlaylist(storefront, playlistId, urlRaw)
 	err := playlist.GetResp(token, Config.Language)
 	if err != nil {
 		fmt.Println("Failed to get playlist response.")
@@ -1918,7 +1924,7 @@ func main() {
 					fmt.Println("Invalid song URL format.")
 					continue
 				}
-				err := ripSong(songId, token, storefront, Config.MediaUserToken)
+				err := ripSong(songId, token, storefront, Config.MediaUserToken, urlRaw)
 				if err != nil {
 					fmt.Println("Failed to rip song:", err)
 				}
@@ -1933,14 +1939,14 @@ func main() {
 			if strings.Contains(urlRaw, "/album/") {
 				fmt.Println("Album")
 				storefront, albumId = checkUrl(urlRaw)
-				err := ripAlbum(albumId, token, storefront, Config.MediaUserToken, urlArg_i)
+				err := ripAlbum(albumId, token, storefront, Config.MediaUserToken, urlArg_i, urlRaw)
 				if err != nil {
 					fmt.Println("Failed to rip album:", err)
 				}
 			} else if strings.Contains(urlRaw, "/playlist/") {
 				fmt.Println("Playlist")
 				storefront, albumId = checkUrlPlaylist(urlRaw)
-				err := ripPlaylist(albumId, token, storefront, Config.MediaUserToken)
+				err := ripPlaylist(albumId, token, storefront, Config.MediaUserToken, urlRaw)
 				if err != nil {
 					fmt.Println("Failed to rip playlist:", err)
 				}
@@ -1951,7 +1957,7 @@ func main() {
 					fmt.Println(": meida-user-token is not set, skip station dl")
 					continue
 				}
-				err := ripStation(albumId, token, storefront, Config.MediaUserToken)
+				err := ripStation(albumId, token, storefront, Config.MediaUserToken, urlRaw)
 				if err != nil {
 					fmt.Println("Failed to rip station:", err)
 				}
@@ -2490,7 +2496,7 @@ func extractVideo(c string) (string, error) {
 	return streamUrl.String(), nil
 }
 
-func ripSong(songId string, token string, storefront string, mediaUserToken string) error {
+func ripSong(songId string, token string, storefront string, mediaUserToken string, urlRaw string) error {
 	// Get song info to find album ID
 	manifest, err := ampapi.GetSongResp(storefront, songId, Config.Language, token)
 	if err != nil {
@@ -2503,7 +2509,7 @@ func ripSong(songId string, token string, storefront string, mediaUserToken stri
 
 	// Use album approach but only download the specific song
 	dl_song = true
-	err = ripAlbum(albumId, token, storefront, mediaUserToken, songId)
+	err = ripAlbum(albumId, token, storefront, mediaUserToken, songId, urlRaw)
 	if err != nil {
 		fmt.Println("Failed to rip song:", err)
 		return err

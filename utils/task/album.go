@@ -27,12 +27,14 @@ type Album struct {
 	Resp     ampapi.AlbumResp
 	Name     string
 	Tracks   []Track
+	OriginalUrl string
 }
 
-func NewAlbum(st string, id string) *Album {
+func NewAlbum(st string, id string, originalUrl string) *Album {
 	a := new(Album)
 	a.Storefront = st
 	a.ID = id
+	a.OriginalUrl = originalUrl
 
 	//fmt.Println("Album created")
 	return a
@@ -73,6 +75,7 @@ func (a *Album) GetResp(token, l string) error {
 			DiscTotal: a.Resp.Data[0].Relationships.Tracks.Data[len-1].Attributes.DiscNumber,
 			PreID:     a.ID,
 			AlbumData: a.Resp.Data[0],
+			OriginalUrl: a.OriginalUrl,
 		})
 	}
 	return nil

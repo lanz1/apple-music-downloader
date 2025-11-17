@@ -29,12 +29,14 @@ type Station struct {
 	Type     string
 	Name     string
 	Tracks   []Track
+	OriginalUrl string
 }
 
-func NewStation(st string, id string) *Station {
+func NewStation(st string, id string, originalUrl string) *Station {
 	a := new(Station)
 	a.Storefront = st
 	a.ID = id
+	a.OriginalUrl = originalUrl
 	//fmt.Println("Album created")
 	return a
 
@@ -87,6 +89,7 @@ func (a *Station) GetResp(mutoken, token, l string) error {
 			DiscTotal: albumResp.Data[0].Relationships.Tracks.Data[albumLen-1].Attributes.DiscNumber,
 			PreID:     a.ID,
 			AlbumData: albumResp.Data[0],
+			OriginalUrl: a.OriginalUrl,
 		})
 		a.Tracks[i].PlaylistData.Attributes.Name = a.Name
 		a.Tracks[i].PlaylistData.Attributes.ArtistName = "Apple Music Station"

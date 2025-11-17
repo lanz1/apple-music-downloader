@@ -27,12 +27,14 @@ type Playlist struct {
 	Resp     ampapi.PlaylistResp
 	Name     string
 	Tracks   []Track
+	OriginalUrl string
 }
 
-func NewPlaylist(st string, id string) *Playlist {
+func NewPlaylist(st string, id string, originalUrl string) *Playlist {
 	a := new(Playlist)
 	a.Storefront = st
 	a.ID = id
+	a.OriginalUrl = originalUrl
 
 	//fmt.Println("Album created")
 	return a
@@ -75,6 +77,7 @@ func (a *Playlist) GetResp(token, l string) error {
 			//DiscTotal: a.Resp.Data[0].Relationships.Tracks.Data[len-1].Attributes.DiscNumber, 在它处获取
 			PreID:        a.ID,
 			PlaylistData: a.Resp.Data[0],
+			OriginalUrl:  a.OriginalUrl,
 		})
 	}
 	return nil
